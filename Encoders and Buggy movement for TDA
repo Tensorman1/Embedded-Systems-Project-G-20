@@ -1,0 +1,75 @@
+Ahmed Al-Haddad
+
+#include "mbed.h"
+#include "QEI.h"
+#include "C12832.h"
+
+C12832 lcd(D11, D13, D12, D7, D10); 
+PwmOut left_motor(PC_8);
+PwmOut right_motor(PA_11);
+DigitalOut bipolar1(PB_9);
+DigitalOut bipolar2(PB_10);
+DigitalOut enable(A0);
+DigitalOut LED(D8);
+QEI encoder(PC_4, PB_1, NC, 256);
+
+void drive(float left_speed, float right_speed){
+    left_motor.write(left_speed);
+    right_motor.write(right_speed);
+}
+
+/*void turnRight(){
+    left_motor.write(0.7f);
+    right_motor.write(0);
+}*/
+
+void Square(){
+    enable=1;
+    for(int i = 0; i < 4; i++){
+        drive(0.9f, 0.9f); 
+        wait(2);
+        enable = 0;
+        wait(1);
+        enable = 1;
+        drive(0.9f, 0.5f);
+        wait(1);   
+    }
+    enable = 0;
+}
+
+void retraceSquare(){
+    enable = 1;
+    left_motor.write(0.5f);
+    right_motor.write(0.9f);
+    wait(1);
+    for(int i = 0; i < 4; i++){
+        drive(0.8f, 0.8f);
+        wait(2);
+        drive(0.5f, 0.8f);
+        wait(0.5);   
+    }
+    enable = 0;
+}
+
+int main() {
+
+    left_motor.period_us(5);
+    right_motor.period_us(5);
+    bipolar1 = 1;
+    bipolar2 = 1;
+    enable = 1;
+    LED = 1;
+    Square();
+    wait(1);
+    retraceSquare();
+    lcd.cls(); 
+      
+    lcd.locate(0,0);
+    
+    
+    
+    while(1) {
+        lcd.locate(0,0);
+        lcd.printf(" pulses are :%i", encoder.getPulses());
+    }
+}
