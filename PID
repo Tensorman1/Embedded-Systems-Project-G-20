@@ -1,23 +1,17 @@
 #include "mbed.h"
 #include "QEI.h"
 
-
 const double Kd = 0.05; // Derivative gain
+
 const double Ki = 0.01; // Integral gain
 const double Kp = 0.1; // Proportional gain
 const int NUM_SENSORS = 5; // Number of line sensors
 
 const int SENSOR_PIN[NUM_SENSORS] = {A0, A1, A2, A3, A4}; // Analog pin connections for sensors
-
-
-
-
 const int LEFT_MOTOR_PIN =
 const int RIGHT_MOTOR_PIN = 
 
-
 Read sensors values and associate corresponding pins
-
 
 float calculatePID(float error, float previous_error, float integral) {
     float proportional = Kp * error;
@@ -47,9 +41,7 @@ int main() {
         
         adjustMotors(pidOutput);
 
-        
         previous_error = error;        // Add delay or control loop rate control here
     }
-
     return 0;
 }
