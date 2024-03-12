@@ -1,11 +1,27 @@
 speed = w
 distance_from_left_sensor = 
 distance_from_right_sensor = 
-Kp = 0.01 //keep scaling depending upon the response received 
+Kp1 = 0.01 //keep scaling depending upon the response received 
 
-def proportional_control (Kp, w, ref_w):
-    ref_w = Kp*w
-    return ref_w
+Kp2 = 0.01
+ref_w =
+ref_dev_left = 
+ref_dev_right = 
+Kp3 = 0.01 
+
+
+
+
+def proportional_control (Kp, w, ref_w, distance_from_left_sensor, distance_from_right_sensor):
+    ref_w = Kp1*w
+    ref_dev_left = Kp2*distance_from_left_sensor
+    ref_dev_right = Kp3*distance_from_right_sensor
+
+
+    return ref_w, ref_dev_left, ref_dev_right
+
+
+
+
 
 proportional_control()
-Written in Python
