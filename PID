@@ -1,14 +1,16 @@
 ARKA IAN GOSWAMI
 
+ADD THE ZIEGER NICHOLS METHOD FOR TUNING
 #include "mbed.h"
+
 #include "QEI.h"
 
 const double Kd = 0.05; // Derivative gain
 QEI encoderR(PB_1, PC_4, NC, 256);
 QEI encoderL(PA_2, PA_3, NC, 256);
-
 const double Ki = 0.01; // Integral gain
 const double Kp = 0.1; // Proportional gain
+
 const int NUM_SENSORS = 5; // Number of line sensors
 
 const int SENSOR_PIN[NUM_SENSORS] = {A0, A1, A2, A3, A4}; // Analog pin connections for sensors
