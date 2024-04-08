@@ -1,0 +1,18 @@
+const double Kp_max = 0.6; //Ku = Kp_max = maximum value that Kp may take for the system to become unstable/oscillatory
+const double Ki_tuned = 2.0 * Kp_max; //the scaling factors are pre-specified for each possible value of the frequency at which Kp_max is reached. 
+const double Kd_tuned = 0.125 * Kp_max;
+double Kp, Ki, Kd;
+
+void zieglerNichols(double Ku, double Tu) {
+    Kp = 0.6 * Ku;
+    Ki = 1.2 * Ku / Tu;
+    Kd = 0.075 * Ku * Tu;
+}
+int main() {
+    
+    
+    //Determine experimentally
+    double Ku = 0.5; // Ultimate gain
+    double Tu = 2.5; // Ultimate period
+    zieglerNichols(Ku, Tu);
+}
