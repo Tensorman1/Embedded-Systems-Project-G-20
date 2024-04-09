@@ -1,25 +1,6 @@
 ARKA IAN GOSWAMI
 
 ADD THE ZIEGER NICHOLS METHOD FOR TUNING
-#include "mbed.h"
-
-#include "QEI.h"
-
-const double Kd = 0.05; // Derivative gain
-QEI encoderR(PB_1, PC_4, NC, 256);
-QEI encoderL(PA_2, PA_3, NC, 256);
-const double Ki = 0.01; // Integral gain
-const double Kp = 0.1; // Proportional gain
-
-const int NUM_SENSORS = 5; // Number of line sensors
-
-const int SENSOR_PIN[NUM_SENSORS] = {A0, A1, A2, A3, A4}; // Analog pin connections for sensors
-const int LEFT_MOTOR_PIN =
-
-const int RIGHT_MOTOR_PIN = 
-
-Read sensors values and associate corresponding pins
-
 const double Kp_max = 0.6; //Ku = Kp_max = maximum value that Kp may take for the system to become unstable/oscillatory
 const double Ki_tuned = 2.0 * Kp_max; //the scaling factors are pre-specified for each possible value of the frequency at which Kp_max is reached. 
 const double Kd_tuned = 0.125 * Kp_max;
@@ -29,57 +10,8 @@ void zieglerNichols(double Ku, double Tu) {
     Kp = 0.6 * Ku;
     Ki = 1.2 * Ku / Tu;
     Kd = 0.075 * Ku * Tu;
-}
-int main() {
-    
-    
-    //Determine experimentally
-    double Ku = 0.5; // Ultimate gain
-    double Tu = 2.5; // Ultimate period
-    zieglerNichols(Ku, Tu);
-}
-float calculatePID(float error, float previous_error, float integral) {
-    float proportional = Kp * error;
-    float derivative = Kd * (error - previous_error);
-    integral += error * Ki;
-    return proportional + integral + derivative;
-}
-class PIDController {
-private:
-    const double Kd = 0.05; // Derivative gain
-    const double Ki = 0.01; // Integral gain
-    const double Kp = 0.1;  // Proportional gain
-    float integral = 0;     // Integral term
-
-public:
-    float calculatePID(float error, float previous_error) {
-        float proportional = Kp * error;
-        float derivative = Kd * (error - previous_error);
-        integral += error * Ki;
-        return proportional + integral + derivative;
-    }
-    float motor_speed(){
-         unsigned long currentMillis = millis();
-         if (currentMillis - previousMillis >= interval) {
-            long pulses = myEnc.getPulses();
-            long revolutions = myEnc.getRevolutions();
-
-            // Calculate time elapsed since last calculation
-            float deltaTime = (currentMillis - previousMillis) / 1000.0; // Convert to seconds
-
-            // Calculate speed in revolutions per second (RPS)
-            float speed_rps = (revolutions * 1.0) / deltaTime;
-
-            // Convert speed to RPM (Revolutions per minute)
-            float speed_rpm = speed_rps * 60;
-            // Update previous millis for next calculation
-            previousMillis = currentMillis;
-        }
-    }
-};
 
 }
-
 int main() {
     
     
