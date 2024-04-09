@@ -1,22 +1,197 @@
 ARKA IAN GOSWAMI
 
-ADD THE ZIEGER NICHOLS METHOD FOR TUNING
+Add the Ziegler Nichols method For Tuning
+#include "mbed.h"
+#include "QEI.h"
+PwmOut left_motor(PA_9);
+PwmOut right_motor(PC_7);
+DigitalOut bipolar1(PB_8);
+DigitalOut bipolar2(PA_6);
+DigitalOut enable(PB_9);
+QEI encoderR(PA_10, PC_8, NC, 256);
+QEI encoderL(PA_3, PA_2, NC, 256);
+
+AnalogIn S1(A0);
+AnalogIn S2(A1);
+AnalogIn S3(A2);
+AnalogIn S4(A3);
+AnalogIn S5(A4);
+DigitalOut Switch1(PB_13);
+DigitalOut Switch2(PB_14);
+DigitalOut Switch3(PB_15);
+DigitalOut Switch4(PB_1);
+DigitalOut Switch5(PB_2);
+Serial hm10(PA_11, PA_12);
+
+char s;
+char w;
+const float PI = 3.14159;
+
 const double Kp_max = 0.6; //Ku = Kp_max = maximum value that Kp may take for the system to become unstable/oscillatory
 const double Ki_tuned = 2.0 * Kp_max; //the scaling factors are pre-specified for each possible value of the frequency at which Kp_max is reached. 
 const double Kd_tuned = 0.125 * Kp_max;
 double Kp, Ki, Kd;
-
+const float wheelDiameter = 0.0816; // in meters
+const float gearRatio = 15;
+const int CPR = 256; // Counts per revolution
+const float wheelDistance = 0.216;
+const int NUM_SENSORS = 5; // Number of line sensors
+const int SENSOR_PIN[NUM_SENSORS] = {A0, A1, A2, A3, A4}; // Analog pin connections for sensors
+float sensorThresholds[NUM_SENSORS];
+float setpoint = 0;
+float angularIntegral = 0;
+float angularPrevious_error = 0;
+float integral = 0;
+float previous_error = 0;
+float sampleTime = 0.1;
 void zieglerNichols(double Ku, double Tu) {
     Kp = 0.6 * Ku;
+    
     Ki = 1.2 * Ku / Tu;
     Kd = 0.075 * Ku * Tu;
 
 }
-int main() {
+float calculatePID(float setpoint, float measured, float& integral, float& previous_error, float sampleTime) {
+    float error = setpoint - measured;
+    integral += error * sampleTime;
+    float derivative = (error - previous_error) / sampleTime;
+    previous_error = error;
+    return (Kp * error) + (Ki * integral) + (Kd * derivative);
+}
+
+float f(float wheelDiameter, float gearRatio, float CPR){
+    float wheelCircumference = wheelDiameter * 1000.0 * PI; // in millimeters
+    // Calculate the distance per encoder tick
+    float distancePerTick = wheelCircumference / (gearRatio * CPR);
+    // Return the distance per tick
+    return distancePerTick;
+}
+
+float calculateVelocity(int ticks, float sampleTime) {
+    float tickRate = ticks / sampleTime;
+    float velocity = tickRate * f(wheelDiameter, gearRatio, CPR);
+    return velocity;
+}
+
+float calculateAngularVelocity(int rightTicks, int leftTicks, float sampleTime) {
+    float rightVelocity = calculateVelocity(rightTicks, sampleTime);
+    float leftVelocity = calculateVelocity(leftTicks, sampleTime);
+    float angularVelocity = (rightVelocity - leftVelocity) / wheelDistance;
+    return angularVelocity;
+}
+
+float calculatePositionError() {
+    float sensorValues[NUM_SENSORS];
+
+    sensorValues[0] = S1.read();
+    sensorValues[1] = S2.read();
+    sensorValues[2] = S3.read();
+    sensorValues[3] = S4.read();
+    sensorValues[4] = S5.read();
+
+    float targetPositions[NUM_SENSORS] = {0, 1, 2, 3, 4};
+    float positionSum = 0;
+    float sensorSum = 0;
+
+    for(int i = 0; i < NUM_SENSORS; i++) {
+        positionSum += targetPositions[i] * sensorValues[i];
+        sensorSum += sensorValues[i];
+    }
+
+    float positionError = 0;
+    if(sensorSum != 0) {
+        positionError = (positionSum / sensorSum) - ((NUM_SENSORS - 1) / 2.0);
+    }
+
+    return positionError;
+}
+// Function to calibrate sensors
+void calibrateSensors() {
     
-    
+    float sensorValuesLine[NUM_SENSORS] = { /* ... */ };
+    float sensorValuesBackground[NUM_SENSORS] = { /* ... */ };
+
+    // Calculate thresholds
+    for(int i = 0; i < NUM_SENSORS; i++) {
+        sensorThresholds[i] = (sensorValuesLine[i] + sensorValuesBackground[i]) / 2.0;
+    }
+}
+
+// Function to read sensors and determine if they are over the line
+bool isSensorOverLine(int sensorIndex) {
+    float sensorValue = 0;
+    switch(sensorIndex) {
+        case 0: sensorValue = S1.read(); break;
+        case 1: sensorValue = S2.read(); break;
+        case 2: sensorValue = S3.read(); break;
+        case 3: sensorValue = S4.read(); break;
+        case 4: sensorValue = S5.read(); break;
+    }
+    return sensorValue > sensorThresholds[sensorIndex];
+}
+
+
+void followLine() {
+    float sensorValues[NUM_SENSORS] = {S1.read(), S2.read(), S3.read(), S4.read(), S5.read()};
+
+    float positionError = calculatePositionError(); 
+    float turnSpeedAdjustment = 0.1;
+    int rightPulses = encoderR.getPulses();
+    int leftPulses = encoderL.getPulses();
+    float angularVelocity = calculateAngularVelocity(rightPulses, leftPulses, sampleTime);
+    // Decide the direction based on position error
+    if (positionError == 0) {
+        // Move straight
+        left_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime));
+        right_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime));
+    } else if (positionError > 0) {
+        // Turn right
+        left_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime) + turnSpeedAdjustment);
+        right_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime) - turnSpeedAdjustment);
+    } else {
+        // Turn left
+        left_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime) - turnSpeedAdjustment);
+        right_motor.write(0.65 + calculatePID(setpoint, angularVelocity, integral, previous_error, sampleTime) + turnSpeedAdjustment);
+    }
+}
+
+
+int main(){
+
     //Determine experimentally
     double Ku = 0.5; // Ultimate gain
     double Tu = 2.5; // Ultimate period
-    zieglerNichols(Ku, Tu);
+    zieglerNichols(Ku, Tu); 
+
+
+    left_motor.period_us(50);
+    right_motor.period_us(50);
+    bipolar1 = 1;
+    bipolar2 = 1;
+    enable = 0;
+    Switch1 = 1;
+    Switch2 = 1;
+    Switch3 = 1;
+    Switch4 = 1;
+    Switch5 = 1;
+    //calibrateSensors();
+    hm10.baud(9600);//Set up baud rate for serial communication
+    while (!hm10.writeable()) {}
+    while(1){
+        if (hm10.readable()) {
+            s = hm10.getc();
+            if(s == '1'){
+                enable = 1;
+                followLine();
+                // Reset encoder counts after processing
+                encoderR.reset();
+                encoderL.reset();
+                // Wait for the next sample
+                wait(sampleTime);
+            }
+            if(s == '0'){
+                enable = 0;
+            }
+        }
+    }
 }
