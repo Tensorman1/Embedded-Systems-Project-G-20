@@ -190,6 +190,8 @@ int main(){
                 wait(sampleTime);
             }
             if(s == '0'){
+                
+
                 enable = 0;
             }
         }
