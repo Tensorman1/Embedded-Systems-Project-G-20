@@ -43,12 +43,13 @@ float integral = 0;
 float previous_error = 0;
 float sampleTime = 0.1;
 
-float calculatePID(float setpoint, float measured, float& integral, float& previous_error, float sampleTime) {
+float calculatePID(float setpoint, float measured, float& integral, float& previous_error, float sampleTime, float Derivative, float Proportional) {
     float error = setpoint - measured;
-    integral += error * sampleTime;
-    float derivative = (error - previous_error) / sampleTime;
+    float Proportional = Kp*error;
+    integral += Ki*error*sampleTime;
+    float derivative = Kd*((error - previous_error) / sampleTime);
     previous_error = error;
-    return (Kp * error) + (Ki * integral) + (Kd * derivative);
+    return (Kp*error) + (Ki*integral) + (Kd*derivative);
 }
 
 float f(float wheelDiameter, float gearRatio, float CPR){
