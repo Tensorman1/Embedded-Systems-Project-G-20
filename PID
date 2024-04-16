@@ -45,9 +45,9 @@ float sampleTime = 0.1;
 
 float calculatePID(float setpoint, float measured, float& integral, float& previous_error, float sampleTime, float Derivative, float Proportional) {
     float error = setpoint - measured;
-    float Proportional = Kp*error;
-    integral += Ki*error*sampleTime;
-    float derivative = Kd*((error - previous_error) / sampleTime);
+    float Proportional = error;
+    integral += error*sampleTime;
+    float derivative = (error - previous_error) / sampleTime;
     previous_error = error;
     return (Kp*error) + (Ki*integral) + (Kd*derivative);
 }
